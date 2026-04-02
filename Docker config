@@ -1,0 +1,34 @@
+Install AWS CLI
+https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+''aws configure''
+Verify:
+''aws sts get-caller-identity''
+Run Docker with:
+-v ~/.aws:/home/glue/.aws
+
+
+Docker image pulling:
+---------------
+docker pull public.ecr.aws/glue/aws-glue-libs:5
+
+Docker run:
+-----------
+docker run -it --rm -v "%USERPROFILE%\.aws:/home/hadoop/.aws" -v "C:\Users\ITS-523\glue:/home/hadoop/workspace/" -e AWS_PROFILE=default --name glue5_spark_submit public.ecr.aws/glue/aws-glue-libs:5 pyspark
+
+
+
+Snowflake:
+------------
+docker run -it --rm --add-host=host.docker.internal:host-gateway -v "C:\Users\ITS-523\.aws:/home/hadoop/.aws" -v "C:\Users\ITS-523\glue:/home/hadoop/workspace" -e AWS_PROFILE=default --name glue5_spark_submit public.ecr.aws/glue/aws-glue-libs:5 pyspark --packages net.snowflake:spark-snowflake_2.12:2.11.2-spark_3.3,net.snowflake:snowflake-jdbc:3.16.0
+
+or
+
+docker run -it --rm --add-host=host.docker.internal:host-gateway -v "C:\Users\ITS-523\.aws:/home/hadoop/.aws" -v "C:\Users\ITS-523\glue:/home/hadoop/workspace" -v "C:\Users\ITS-523\glue\snowflake_jars:/opt/spark/jars" -e AWS_PROFILE=default --name glue5_spark_submit public.ecr.aws/glue/aws-glue-libs:5 pyspark
+
+
+----
+Steps: Download Snowflake JDBC Driver
+1.Go to https://docs.snowflake.com/en/developer-guide/jdbc/jdbc-download
+2.Download snowflake-jdbc-3.16.0.jar (or latest)
+3.Save to C:\Users\I7363\glue\ (your workspace)
+
