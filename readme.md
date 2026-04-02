@@ -75,7 +75,6 @@ SNOWFLAKE_TABLE = "ORDERS"
 INCREMENTAL_COLUMN = "updated_at"  # Your timestamp column
 PRIMARY_KEY = "order_id"           # Your primary key
 LOAD_TYPE = "incremental"          # or "full"
-S3_WATERMARK_PATH = "s3://my-bucket/watermarks/"
 ```
 
 ### Step 2: Store Secrets (Recommended)
