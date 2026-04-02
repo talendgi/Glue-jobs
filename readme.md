@@ -9,12 +9,8 @@ Complete AWS Glue job for synchronizing data from MySQL to Snowflake with automa
 - Detects and adds new columns automatically
 - Alerts on data type mismatches
 
-✅ **Incremental Loading**
-- Watermark-based incremental sync
-- Stores watermarks in S3 for resume capability
-- Supports both full and incremental loads
-
 ✅ **Data Integrity**
+- Supports both full and incremental loads
 - MERGE/UPSERT support with primary keys
 - Handles duplicate records intelligently
 - Type-safe conversions from MySQL to Snowflake
