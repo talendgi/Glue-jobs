@@ -50,9 +50,7 @@ spark.sql("SELECT * FROM...")
 
 The AWS Glue Job tracker.
 
-   **Usage:** This object tracks the lifecycle of your specific job run in the AWS Glue Console.
-   It is required if you want to use Glue Job Bookmarks (which automatically track incremental data without needing a custom PROCESS_CONTROL_TABLE).
-   It handles job metrics (how much data was processed, how long it took).
+  **Usage:** This object tracks the lifecycle of your specific job run in the AWS Glue Console.
    You use it to start the job (job.init()) and successfully finish it (job.commit()).
 
 -------------------------------------
