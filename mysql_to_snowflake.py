@@ -11,7 +11,6 @@ from datetime import datetime
 # import json
 # import datetime
 
-# ============================================================================
 # CONFIGURATION
 # ============================================================================
 
@@ -22,10 +21,10 @@ MYSQL_DATABASE = "its_mtd"
 MYSQL_DATABASE_MTD="its_mtd"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "Andorokta!321"
-MYSQL_TABLE = "blood_donation_registry_ml_ready"
+MYSQL_TABLE = "trip_sample_table_py"
 
 # Snowflake Configuration  
-SNOWFLAKE_ACCOUNT = "kg88800"
+SNOWFLAKE_ACCOUNT = "IW82827.ap-southeast-7.aws"
 SNOWFLAKE_USER = "logeshits"
 SNOWFLAKE_PASSWORD = "Andoroktaits321"
 SNOWFLAKE_DATABASE = "ITS"
@@ -33,7 +32,7 @@ SNOWFLAKE_SCHEMA = "WORKSPACE"
 SNOWFLAKE_SCHEMA_TEMP='STG'
 SNOWFLAKE_WAREHOUSE = "COMPUTE_WH"
 SNOWFLAKE_ROLE = "ITS_WORKSPACE"
-SNOWFLAKE_TABLE = "blood_donation_registry_ml_ready"
+SNOWFLAKE_TABLE = "trip_sample_table_py"
 
 
 
@@ -46,12 +45,10 @@ SNOWFLAKE_OPTIONS = {
     "sfSchema": SNOWFLAKE_SCHEMA,
     "sfWarehouse": SNOWFLAKE_WAREHOUSE,
     "sfRole": SNOWFLAKE_ROLE
-    # "tempDir": S3_TEMP_PATH  # S3 staging for better performance
 }
 
 MYSQL_JDBC_URL = f"jdbc:mysql://{MYSQL_HOST}:{MYSQL_PORT}/"
 
-# ============================================================================
 # INITIALIZE GLUE CONTEXT
 # ============================================================================
 # args = getResolvedOptions(sys.argv, ['JOB_NAME'])
@@ -65,7 +62,7 @@ job = Job(glueContext)
 spark.conf.set("spark.sql.adaptive.enabled", "true")
 spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
 
-print("=" * 80)
+print("-" * 80)
 print(f"📈 MySQL to Snowflake Sync Job :")
 print(f"⏰ Job Start time: {datetime.now()}")
 
@@ -105,7 +102,7 @@ INCREMENTAL_COLUMN = active_process[0]["_CONDITION"]
 PRIMARY_KEY = active_process[0]["PRIMARY_KEY"]
 load_type = active_process[0]["LOAD_TYPE"]
 process_name = active_process[0]["PROCESS_NAME"]
-print("===========================================================")
+print("----------------------------------------------------------------------------")
 print("📊 Reading PROCESS_CONTROL_TABLE...")
 
 print(f" 📈 Last end date: {last_enddate}, Target table: {target_table} , Target Database: {MYSQL_DATABASE}, process name: {active_process[0]['PROCESS_NAME']}")
@@ -116,26 +113,9 @@ print(f"❄️  Target: {target_database}.{target_schema}.{target_table}")
 print(f"🔄 Load Type: {load_type}")
 print(f"🔑 Primary Key: {PRIMARY_KEY}")
 print(f"📌 Incremental Column: {INCREMENTAL_COLUMN}")
-print("===========================================================")
 
-
-
-# # Advanced Load Configuration
-# ENABLE_SOFT_DELETE = False  # Track deleted records
-# ENABLE_CDC = False  # Change Data Capture with before/after values
-
-# # S3 Configuration
-# S3_WATERMARK_PATH = "s3://your-bucket/glue-watermarks/"
-# S3_TEMP_PATH = "s3://your-bucket/glue-temp/"
-
-# # Performance Settings
-# USE_BATCH_INSERT = True
-# BATCH_SIZE = 10000
-# MAX_RETRIES = 3
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
+# HELPER FUNCTION
+# ----------------------------------------------------------------------------
 
 def get_mysql_data_with_glue_context(table_name, incremental_col=None, watermark_value=None):
     """Read data from MySQL using Glue DynamicFrame"""
@@ -255,9 +235,9 @@ def compare_schemas(source_schema, target_schema):
             target_field = target_fields[col_name]
             if type(source_field.dataType) != type(target_field.dataType):
                 type_mismatches.append((col_name, source_field.dataType, target_field.dataType))
-                print(f"  ⚠️  Type mismatch: {col_name}")
-                print(f"      Source: {source_field.dataType}")
-                print(f"      Target: {target_field.dataType}")
+                # print(f"  ⚠️  Type mismatch: {col_name}")
+                # print(f"      Source: {source_field.dataType}")
+                # print(f"      Target: {target_field.dataType}")
     
     # Check for columns in target but not in source (potential deletes)
     for col_name in target_fields:
@@ -293,9 +273,6 @@ def create_snowflake_table_with_metadata(table_name, schema):
     columns.append("SNFLK_LOADED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()")
     columns.append("SOURCE_SYSTEM VARCHAR(100) DEFAULT 'MYSQL'")
     
-    # if ENABLE_SOFT_DELETE:
-    #     columns.append("  _IS_DELETED BOOLEAN DEFAULT FALSE")
-    #     columns.append("  _DELETED_AT TIMESTAMP_NTZ")
     
     columns_sql = ",\n".join(columns)
 
@@ -404,14 +381,27 @@ def Update_process_control_table( source_table, target_table,incremental_column,
     max_date = max_date_df.collect()[0]["MAX_DATE"]
 
     print(f"✅ Max date in Snowflake table: {max_date}")
+
+    if max_date is None:
+        print(" ⏳No new data to process or Target table is empty (max_date is NULL).")
+        update_sql = f"""
+        UPDATE PROCESS_CONTROL_TABLE
+        SET ENDDATE = ENDDATE,batch_id = DATE_FORMAT(NOW(), '%Y%m%d%H%i%s')
+        WHERE SOURCE_TABLE_NAME = '{source_table}'
+        AND TARGET_TABLE_NAME = '{target_table}'
+        AND PROCESS_NAME = '{process_name}'
+        """ 
+    else:
+        print(f"📅 Updating ENDDATE to max_date: {max_date}")
+        
+        update_sql = f"""
+        UPDATE PROCESS_CONTROL_TABLE
+        SET ENDDATE = TIMESTAMP('{max_date}', '00:00:00'),batch_id = DATE_FORMAT(NOW(), '%Y%m%d%H%i%s')
+        WHERE SOURCE_TABLE_NAME = '{source_table}'
+          AND TARGET_TABLE_NAME = '{target_table}'
+          AND PROCESS_NAME = '{process_name}'
+        """
     
-    update_sql = f"""
-    UPDATE PROCESS_CONTROL_TABLE
-    SET ENDDATE = TIMESTAMP('{max_date}', '00:00:00'),batch_id = DATE_FORMAT(NOW(), '%Y%m%d%H%i%s')
-    WHERE SOURCE_TABLE_NAME = '{source_table}'
-      AND TARGET_TABLE_NAME = '{target_table}'
-      AND PROCESS_NAME = '{process_name}'
-    """
     
     try:
         conn = spark._sc._jvm.java.sql.DriverManager.getConnection(
@@ -421,37 +411,29 @@ def Update_process_control_table( source_table, target_table,incremental_column,
         stmt = conn.createStatement()
         stmt.execute(update_sql)
         conn.close()
-        # spark.write \
-        #     .format("mysql") \
-        #     .option("url", MYSQL_JDBC_URL+MYSQL_DATABASE_MTD) \
-        #     .option("dbtable", "PROCESS_CONTROL_TABLE") \
-        #     .option("user", MYSQL_USER) \
-        #     .option("password", MYSQL_PASSWORD) \
-        #     .option("driver", "com.mysql.cj.jdbc.Driver") \
-        #     .save(mode="append", query=update_sql)
 
         print(f"  ✅ Process control table updated with status: {update_sql}")
     except Exception as e:
         print(f"  ❌ Failed to update process control table: {update_sql}, error: {str(e)}")
         raise e
 
-print("\n" + "=" * 80)
-# main execution
-print("=" * 80)
 if __name__ == "__main__":
+    print("\n" + "-" * 80)
     # Read data from MySQL
     mysql_df=get_mysql_data_with_glue_context(MYSQL_TABLE, INCREMENTAL_COLUMN, str(datetime.fromtimestamp(cutoff_ts)))
     # MySQL schema
     mysql_schema = mysql_df.schema
+    print("\n" + "-" * 80)
     print(f"\n📋 MySQL Schema:")
     mysql_df.printSchema()
     # check if target table exists in Snowflake and get schema if exists
     get_snowflake_table_exists(target_table)
     if get_snowflake_table_exists(target_table):
+        print("\n" + "-" * 80)
         get_snowflake_schema(target_table)
     else:
         print(f"  ❌ Cannot fetch schema for non-existent table {target_table}")
-    get_snowflake_schema(target_table)
+    # get_snowflake_schema(target_table)
 
     snowflake_exists = get_snowflake_table_exists(target_table)
     snowflake_schema = None
@@ -469,24 +451,20 @@ if __name__ == "__main__":
         else:
             print("\n✅ Schemas are in sync")
         
-        if type_mismatches:
-            print("\n⚠️  Type mismatches require manual review")  
+        # if type_mismatches:
+        #     print("\n⚠️  Type mismatches require manual review")  
      #  Load data based on mode
     if load_type == "INCREMENTAL" and PRIMARY_KEY:
+        print("\n" + "-" * 80)
         load_to_snowflake_with_merge(mysql_df, target_table, PRIMARY_KEY)
-    else:
-        load_to_snowflake_append(mysql_df, target_table)
+    # else:
+    #     load_to_snowflake_append(mysql_df, target_table)
+    print("\n" + "-" * 80)
     Update_process_control_table(MYSQL_TABLE, target_table, INCREMENTAL_COLUMN, process_name)
     
-print("\n" + "=" * 80)
+print("\n" + "-" * 80)
 print("🎉 Job completed successfully!")
-print("=" * 80)
+print("-" * 80)
 
-# except Exception as e:
-#     print(f"\n❌ Error occurred: {str(e)}")
-#     import traceback
-#     traceback.print_exc()
-#     raise e
-# job.exit()
 job.commit()
 spark.stop()
