@@ -35,8 +35,10 @@ C:\Users\your_user\
 
 ## Run the Docker Container
 Use the following command to start the interactive Glue 5.0 environment.
-
+```bash
 docker run -it --rm --add-host=host.docker.internal:host-gateway -v "C:\Users\your_user\.aws:/home/hadoop/.aws" -v "C:\Users\your_user\glue:/home/hadoop/workspace" -v "C:\Users\your_user\glue\snowflake_jars:/opt/spark/jars" -e AWS_PROFILE=default --name glue5_spark_submit public.ecr.aws/glue/aws-glue-libs:5 pyspark
+```
+
 
 once the container is created
 <img width="1523" height="469" alt="image" src="https://github.com/user-attachments/assets/606d07ac-0314-4974-8df2-1785a8686fd7" />
