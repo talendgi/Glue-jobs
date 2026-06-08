@@ -1,0 +1,112 @@
+bash-5.2$ python mysql_to_snowflake/mysql_to_snowflake.py
+
+--------------------------------------------------------------------------------
+📈 MySQL to Snowflake Sync Job :
+⏰ Job Start time: 2026-06-08 06:47:01.238056
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/usr/share/aws/aws-java-sdk-v2/aws-sdk-java-bundle-2.29.52.jar!/software/amazon/awssdk/thirdparty/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/share/aws/glue-pds/jars/bundle-2.24.6.jar!/software/amazon/awssdk/thirdparty/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+/usr/local/lib/python3.11/site-packages/pyspark/sql/dataframe.py:147: UserWarning: DataFrame constructor is internal. Do not directly use it.
+  warnings.warn("DataFrame constructor is internal. Do not directly use it.")
+26/06/08 06:47:07 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+----------------------------------------------------------------------------    
+📊 Reading PROCESS_CONTROL_TABLE...
+ 📈 Last end date: 2025-12-26 00:00:00, Target table: trip_sample_table_py , Target Database: ITS, process name: TRIP_DATA_SAMPLE
+⏳  Cutoff timestamp: 1766707200.0 - 2025-12-26 00:00:00
+📊 Source: ITS.trip_sample_table_py , Process name: TRIP_DATA_SAMPLE
+❄️  Target: ITS.WORKSPACE.trip_sample_table_py
+🔄 Load Type: INCREMENTAL
+🔑 Primary Key: trip_id
+📌 Incremental Column: date
+
+--------------------------------------------------------------------------------
+
+📥 Reading data from MySQL: trip_sample_table_py
+  📌 Incremental filter: date > '2025-12-26 00:00:00'               (0 + 1) / 1]
+  ✅ Records fetched: 0                                                         
+
+--------------------------------------------------------------------------------
+
+📋 MySQL Schema:
+root
+ |-- trip_id: string (nullable = true)
+ |-- date: date (nullable = true)
+ |-- city_id: string (nullable = true)
+ |-- passenger_type: string (nullable = true)
+ |-- distance_travelled_km_: integer (nullable = true)
+ |-- fare_amount: integer (nullable = true)
+ |-- passenger_rating: integer (nullable = true)
+ |-- driver_rating: integer (nullable = true)
+ |-- s_file_name: string (nullable = true)
+ |-- s_file_date: timestamp (nullable = true)
+ |-- el_createddate: timestamp (nullable = true)
+ |-- el_modifieddate: timestamp (nullable = true)
+ |-- el_action: string (nullable = true)
+
+26/06/08 06:47:12 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/08 06:47:12 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+26/06/08 06:47:15 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+
+--------------------------------------------------------------------------------
+
+❄️  Fetching Snowflake schema for: trip_sample_table_py
+26/06/08 06:47:15 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+  ✅ Table exists with 15 columns
+26/06/08 06:47:15 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+
+❄️  Fetching Snowflake schema for: trip_sample_table_py
+26/06/08 06:47:15 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+  ✅ Table exists with 15 columns
+
+🔍 Comparing schemas...
+  ⚠️  Column in target but not source: SNFLK_LOADED_AT
+  ⚠️  Column in target but not source: SOURCE_SYSTEM
+
+✅ Schemas are in sync
+
+--------------------------------------------------------------------------------
+
+🔀 Loading with MERGE operation
+  Primary Key: trip_id
+  1️⃣ Loading to staging table: trip_sample_table_py_STG
+26/06/08 06:47:15 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/08 06:47:18 WARN StageWriter$: Fail to check the COPY result because format is not supported. The column names are: status Expect to include file and rows_parsed and rows_loaded 
+26/06/08 06:47:19 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+  2️⃣ Executing MERGE operation
+26/06/08 06:47:19 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/08 06:47:19 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+26/06/08 06:47:24 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/08 06:47:24 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+  ✅ MERGE executed successfully with merge SQL: MERGE INTO ITS.WORKSPACE.trip_sample_table_py target
+USING ITS.STG.trip_sample_table_py_STG source
+ON target.trip_id = source.trip_id
+WHEN MATCHED THEN UPDATE SET
+  target.trip_id = source.trip_id, target.date = source.date, target.city_id = source.city_id, target.passenger_type = source.passenger_type, target.distance_travelled_km_ = source.distance_travelled_km_, target.fare_amount = source.fare_amount, target.passenger_rating = source.passenger_rating, target.driver_rating = source.driver_rating, target.s_file_name = source.s_file_name, target.s_file_date = source.s_file_date, target.el_createddate = source.el_createddate, target.el_modifieddate = source.el_modifieddate, target.el_action = source.el_action,
+  target.SNFLK_LOADED_AT = source.SNFLK_LOADED_AT
+WHEN NOT MATCHED THEN INSERT
+  (trip_id, date, city_id, passenger_type, distance_travelled_km_, fare_amount, passenger_rating, driver_rating, s_file_name, s_file_date, el_createddate, el_modifieddate, el_action, SNFLK_LOADED_AT)
+VALUES
+  (source.trip_id, source.date, source.city_id, source.passenger_type, source.distance_travelled_km_, source.fare_amount, source.passenger_rating, source.driver_rating, source.s_file_name, source.s_file_date, source.el_createddate, source.el_modifieddate, source.el_action, source.SNFLK_LOADED_AT)
+        
+  ✅ MERGE completed successfully
+
+--------------------------------------------------------------------------------
+
+🔄 Updating process control table: 
+26/06/08 06:47:25 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+✅ Max date in Snowflake table: 2025-12-26
+📅 Updating ENDDATE to max_date: 2025-12-26
+  ✅ Process control table updated with status: 
+        UPDATE PROCESS_CONTROL_TABLE
+        SET ENDDATE = TIMESTAMP('2025-12-26', '00:00:00'),batch_id = DATE_FORMAT(NOW(), '%Y%m%d%H%i%s')
+        WHERE SOURCE_TABLE_NAME = 'trip_sample_table_py'
+          AND TARGET_TABLE_NAME = 'trip_sample_table_py'
+          AND PROCESS_NAME = 'TRIP_DATA_SAMPLE'
+        
+
+--------------------------------------------------------------------------------
+🎉 Job completed successfully!
