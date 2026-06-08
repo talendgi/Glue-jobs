@@ -7,6 +7,55 @@ This solution features * incremental loading**, **automatic schema evolution** ,
 ---
 
 ## 🏗️ Architecture & Workflow
+```text
+SparkContext (sc) 
+  │  <-- The core Spark engine
+  └── GlueContext (glueContext) 
+        │  <-- Adds AWS Glue features (Connections, DynamicFrames)
+        │
+        ├── SparkSession (spark) 
+        │     <-- Adds DataFrame & SQL capabilities (Used for Snowflake)
+        │
+        └── Job (job) 
+              <-- Adds Job tracking, metrics, and Bookmarks
+```
+
+**1. sc = SparkContext()**
+
+**What it is:** The entry point to the underlying Apache Spark engine.
+
+**Usage:** It establishes the connection to the Spark cluster (the executor nodes). Without this, Spark cannot run any computations. In AWS Glue, this initializes the distributed computing environment.
+
+
+**2. glueContext = GlueContext(sc)**
+
+**What it is:** The AWS Glue wrapper around the standard SparkContext.
+
+**Usage:** Standard Spark doesn't know how to talk to AWS services (like the Glue Data Catalog, S3, or Glue JDBC Connections). GlueContext bridges this gap.
+It allows you to use Glue-specific features like DynamicFrames (glueContext.create_dynamic_frame...).
+It allows you to use Glue Connections (the ones you configure in the AWS Glue Console).
+
+
+**3. spark = glueContext.spark_session**
+
+**What it is:** The entry point for the Spark DataFrame and SQL API.
+
+**Usage:** While GlueContext is great for Glue-specific things, most modern Spark development (and your Snowflake connector) relies on standard DataFrames. This line extracts the SparkSession so you can use standard Spark commands like:
+spark.read.format("snowflake")...
+df.filter(), df.withColumn(), df.count()
+spark.sql("SELECT * FROM...")
+
+
+**4. job = Job(glueContext)**
+
+   **What it is:** The AWS Glue Job tracker.
+
+   **Usage:** This object tracks the lifecycle of your specific job run in the AWS Glue Console.
+   It is required if you want to use Glue Job Bookmarks (which automatically track incremental data without needing a custom PROCESS_CONTROL_TABLE).
+   It handles job metrics (how much data was processed, how long it took).
+   You use it to start the job (job.init()) and successfully finish it (job.commit()).
+
+-------------------------------------
 
 The pipeline follows a robust, state-driven ETL workflow:
 
@@ -111,4 +160,11 @@ SNOWFLAKE_ROLE=ITS_WORKSPACE
     └──────────┘
 ```
 
+
+**AWS Glue Studio / S3**
+1. Upload the Python script and .env file to an S3 bucket.
+2. Create a Glue Job in the AWS Console.
+3. Under Job Details, ensure Glue version is set to Glue 5.0 - Supports spark 3.5.
+4. Under Advanced properties -> Job parameters, add your environment variables or point to the .env file in S3.
+5. Under Dependent JARs path, provide the S3 URI to your spark-snowflake_2.12-3.x.x.jar.
 
