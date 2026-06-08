@@ -1,103 +1,69 @@
-# MySQL to Snowflake Incremental Sync - AWS Glue Job
+# MySQL to Snowflake Incremental Data Sync (AWS Glue Spark)
 
-Complete AWS Glue job for synchronizing data from MySQL to Snowflake with automatic schema management and incremental loading.
+An automated, incremental ETL pipeline built with **AWS Glue (PySpark)** that syncs data from **MySQL** to **Snowflake**. 
 
-## Features
+This solution features * incremental loading**, **automatic schema evolution** , and **MERGE (UPSERT)** capabilities, all orchestrated via a centralized metadata control table.
 
-✅ **Automatic Schema Management**
-- Creates Snowflake tables if they don't exist
-- Detects and adds new columns automatically
-- Alerts on data type mismatches
+---
 
-✅ **Data Integrity**
-- Supports both full and incremental loads
-- MERGE/UPSERT support with primary keys
-- Handles duplicate records intelligently
-- Type-safe conversions from MySQL to Snowflake
+## 🏗️ Architecture & Workflow
 
-✅ **Production-Ready**
-- Comprehensive error handling
-- Detailed logging with emojis for easy monitoring
-- Transaction management with job commit
+The pipeline follows a robust, state-driven ETL workflow:
 
-## Prerequisites
+1. **Fetch Watermark**: Reads the last processed timestamp (`ENDDATE`) from the MySQL `PROCESS_CONTROL_TABLE`.
+2. **Extract Incremental Data**: Queries the MySQL source table for records newer than the watermark.
+3. **Schema Check & Evolution**: 
+   - Checks if the target table exists in Snowflake.
+   - If it doesn't exist, **auto-creates** it with audit columns.
+   - If it exists, **compares schemas** and automatically adds any new columns found in the MySQL source.
+4. **Load to Staging**: Writes the incremental data to a temporary staging table in Snowflake.
+5. **MERGE (UPSERT)**: Executes a Snowflake `MERGE` statement to update existing records (based on Primary Key) and insert new ones into the final target table.
+6. **Update Watermark**: Updates the `PROCESS_CONTROL_TABLE` in MySQL with the new maximum timestamp for the next run.
 
-### 1. AWS Glue Setup
-- AWS Glue job with Python 3.9+ runtime
-- IAM role with permissions:
-  - S3 read/write access
-  - RDS/MySQL connectivity
-  - CloudWatch Logs access
+---
 
-### 2. Network Configuration
-- VPC configuration with RDS/MySQL access
-- Snowflake IP whitelisting (if required)
-- Security groups allowing outbound HTTPS (443) for Snowflake
+## 📋 Prerequisites
 
-### 3. Required Libraries
-Add these JAR files to your Glue job's "Dependent JARs path":
-```
-s3://your-bucket/jars/mysql-connector-java-8.0.33.jar
-s3://your-bucket/jars/snowflake-jdbc-3.13.30.jar
-s3://your-bucket/jars/spark-snowflake_2.12-2.11.0.jar
-```
+1. **Compute Environment**: AWS Glue 5.0 (Spark  3.5) (or a local Docker environment with Glue libs).
+2. **Snowflake Account**: With a dedicated Warehouse, Database, Schema, and Role.
+3. **MySQL Database**: Acting as both the data source and the metadata store.
+4. **Snowflake Spark Connector JARs**: 
+   - **Crucial**: If using Glue 5.0 (Spark 3.5), you **must** use Snowflake Spark Connector **v3.x** (e.g., `spark-snowflake_2.12-3.1.9.jar`) to ensure Query Pushdown is enabled.
 
-Download links:
-- MySQL Connector: https://dev.mysql.com/downloads/connector/j/
-- Snowflake JDBC: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/
-- Spark Snowflake: https://repo1.maven.org/maven2/net/snowflake/spark-snowflake_2.12/
+---
 
-## Configuration
+## ⚙️ Configuration
 
-### Step 1: Update Configuration Variables
+### 1. Environment Variables (`.env`)
+Create a `.env` file in your workspace root to manage credentials securely.
 
-Edit the configuration section in `mysql_to_snowflake_incremental.py`:
+```env
+# --- MySQL Configuration ---
+MYSQL_HOST=host.docker.internal
+MYSQL_PORT=3306
+MYSQL_DATABASE=its_mtd
+MYSQL_DATABASE_MTD=its_mtd
+MYSQL_USER=root
+MYSQL_PASSWORD=your_mysql_password
 
-```python
-# MySQL Configuration
-MYSQL_HOST = "mydb.abc123.us-east-1.rds.amazonaws.com"
-MYSQL_PORT = "3306"
-MYSQL_DATABASE = "production"
-MYSQL_USER = "etl_user"
-MYSQL_PASSWORD = "SecurePassword123!"
-MYSQL_TABLE = "orders"
+# --- Snowflake Configuration ---
+SNOWFLAKE_ACCOUNT=iw82827.us-west-2.aws
+SNOWFLAKE_USER=your_snowflake_user
+SNOWFLAKE_PASSWORD=your_snowflake_password
+SNOWFLAKE_DATABASE=ITS
+SNOWFLAKE_SCHEMA=WORKSPACE
+SNOWFLAKE_SCHEMA_TEMP=STG
+SNOWFLAKE_WAREHOUSE=COMPUTE_WH
+SNOWFLAKE_ROLE=ITS_WORKSPACE
 
-# Snowflake Configuration
-SNOWFLAKE_ACCOUNT = "xy12345.us-east-1"
-SNOWFLAKE_USER = "ETL_USER"
-SNOWFLAKE_PASSWORD = "SnowPass123!"
-SNOWFLAKE_DATABASE = "ANALYTICS"
-SNOWFLAKE_SCHEMA = "PUBLIC"
-SNOWFLAKE_WAREHOUSE = "ETL_WH"
-SNOWFLAKE_TABLE = "ORDERS"
-
-# Incremental Configuration
-INCREMENTAL_COLUMN = "updated_at"  # Your timestamp column
-PRIMARY_KEY = "order_id"           # Your primary key
-LOAD_TYPE = "incremental"          # or "full"
-```
-
-### Step 2: Store Secrets (Recommended)
-
-For production, use AWS Secrets Manager instead of hardcoded credentials:
-
-```python
-import boto3
-import json
-
-def get_secret(secret_name):
-    client = boto3.client('secretsmanager')
-    response = client.get_secret_value(SecretId=secret_name)
-    return json.loads(response['SecretString'])
-
-# Load credentials
-mysql_creds = get_secret('prod/mysql/credentials')
-snowflake_creds = get_secret('prod/snowflake/credentials')
-
-MYSQL_USER = mysql_creds['username']
-MYSQL_PASSWORD = mysql_creds['password']
-SNOWFLAKE_USER = snowflake_creds['username']
-SNOWFLAKE_PASSWORD = snowflake_creds['password']
+###  Code flow
+```text
+**get_mysql_data_with_glue_context** - Reads incremental data from MySQL using Glue DynamicFrames and applies the watermark filter.
+**compare_schemas** - Compares the MySQL source schema with the Snowflake target schema to detect new columns.
+**create_snowflake_table_with_metadata** - Auto-generates and executes DDL to create the target table in Snowflake, including audit columns (SNFLK_LOADED_AT).
+**alter_snowflake_table** - Automatically executes ALTER TABLE ADD COLUMN if new fields are detected in the source.
+**load_to_snowflake_with_merge** - Handles the heavy lifting: writes to a staging table, executes the MERGE (UPSERT) SQL, and cleans up.
+**Update_process_control_table** - Calculates the new max timestamp from the loaded data and updates the MySQL control table via JDBC.
 ```
 
 ## How It Works
@@ -144,52 +110,5 @@ SNOWFLAKE_PASSWORD = snowflake_creds['password']
     │ Watermark│
     └──────────┘
 ```
-
-### Schema Comparison Logic
-
-1. **New Table**: Creates table with full schema from MySQL
-2. **Existing Table**:
-   - Detects new columns → Runs ALTER TABLE ADD COLUMN
-   - Detects type changes → Logs warning (manual fix required)
-   - No changes → Proceeds to data load
-
-### Incremental Loading
-
-The job tracks the last loaded record using a **watermark**:
-
-
-## Load Modes
-
-### 1. Incremental Load (Recommended)
-
-```python
-LOAD_TYPE = "incremental"
-INCREMENTAL_COLUMN = "updated_at"
-PRIMARY_KEY = "order_id"
-```
-
-**Best for:**
-- Large tables with frequent updates
-- Tracking changes over time
-- Minimizing data transfer
-
-**Requirements:**
-- Table must have a timestamp or auto-increment column
-- Column must be indexed in MySQL for performance
-
-### 2. Full Load
-
-```python
-LOAD_TYPE = "full"
-INCREMENTAL_COLUMN = None
-PRIMARY_KEY = None
-```
-
-**Best for:**
-- Small dimension tables
-- Initial data loads
-- Tables without tracking columns
-
-
 
 
