@@ -6,7 +6,7 @@ This solution features * incremental loading**, **automatic schema evolution** ,
 
 ---
 
-## 🏗️ Architecture & Workflow
+## 🏗️ Architecture & Workflow for spark, Glue contexts
 ```text
 SparkContext (sc) 
   │  <-- The core Spark engine
