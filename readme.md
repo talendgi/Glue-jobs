@@ -22,14 +22,14 @@ SparkContext (sc)
 
 **1. sc = SparkContext()**
 
-**What it is:** The entry point to the underlying Apache Spark engine.
+ The entry point to the underlying Apache Spark engine.
 
 **Usage:** It establishes the connection to the Spark cluster (the executor nodes). Without this, Spark cannot run any computations. In AWS Glue, this initializes the distributed computing environment.
 
 
 **2. glueContext = GlueContext(sc)**
 
-**What it is:** The AWS Glue wrapper around the standard SparkContext.
+The AWS Glue wrapper around the standard SparkContext.
 
 **Usage:** Standard Spark doesn't know how to talk to AWS services (like the Glue Data Catalog, S3, or Glue JDBC Connections). GlueContext bridges this gap.
 It allows you to use Glue-specific features like DynamicFrames (glueContext.create_dynamic_frame...).
@@ -38,7 +38,7 @@ It allows you to use Glue Connections (the ones you configure in the AWS Glue Co
 
 **3. spark = glueContext.spark_session**
 
-**What it is:** The entry point for the Spark DataFrame and SQL API.
+ The entry point for the Spark DataFrame and SQL API.
 
 **Usage:** While GlueContext is great for Glue-specific things, most modern Spark development (and your Snowflake connector) relies on standard DataFrames. This line extracts the SparkSession so you can use standard Spark commands like:
 spark.read.format("snowflake")...
@@ -48,7 +48,7 @@ spark.sql("SELECT * FROM...")
 
 **4. job = Job(glueContext)**
 
-   **What it is:** The AWS Glue Job tracker.
+The AWS Glue Job tracker.
 
    **Usage:** This object tracks the lifecycle of your specific job run in the AWS Glue Console.
    It is required if you want to use Glue Job Bookmarks (which automatically track incremental data without needing a custom PROCESS_CONTROL_TABLE).
