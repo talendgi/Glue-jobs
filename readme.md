@@ -2,7 +2,7 @@
 
 An automated, incremental ETL pipeline built with **AWS Glue (PySpark)** that syncs data from **MySQL** to **Snowflake**. 
 
-This solution features * incremental loading**, **automatic schema evolution** , and **MERGE (UPSERT)** capabilities, all orchestrated via a centralized metadata control table.
+This solution features ** incremental loading**, **automatic schema evolution** , and **MERGE (UPSERT)** capabilities, all orchestrated via a centralized metadata control table.
 
 ---
 
