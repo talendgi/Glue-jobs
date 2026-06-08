@@ -7,32 +7,32 @@ from awsglue.job import Job
 from pyspark.sql.types import *
 from pyspark.sql.functions import col, max as spark_max, lit, current_timestamp, md5, concat_ws
 from datetime import datetime
-# import boto3
-# import json
-# import datetime
+import os
+from dotenv import load_dotenv
 
-# CONFIGURATION
-# ============================================================================
+
+load_dotenv(override=True)
 
 # MySQL Configuration
-MYSQL_HOST = "host.docker.internal"
-MYSQL_PORT = "3306"
-MYSQL_DATABASE = "its_mtd"
-MYSQL_DATABASE_MTD="its_mtd"
-MYSQL_USER = "root"
-MYSQL_PASSWORD = "Andorokta!321"
-MYSQL_TABLE = "trip_sample_table_py"
+MYSQL_HOST = os.getenv("MYSQL_HOST", "host.docker.internal")
+MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "its_mtd")
+MYSQL_DATABASE_MTD=os.getenv("MYSQL_DATABASE_MTD", "its_mtd")
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "Andorokta!321")
+MYSQL_TABLE = os.getenv("MYSQL_TABLE", "trip_sample_table_py")
+# MYSQL_TABLE = "trip_sample_table_py"
 
 # Snowflake Configuration  
-SNOWFLAKE_ACCOUNT = "IW82827.ap-southeast-7.aws"
-SNOWFLAKE_USER = "logeshits"
-SNOWFLAKE_PASSWORD = "Andoroktaits321"
-SNOWFLAKE_DATABASE = "ITS"
-SNOWFLAKE_SCHEMA = "WORKSPACE"
-SNOWFLAKE_SCHEMA_TEMP='STG'
-SNOWFLAKE_WAREHOUSE = "COMPUTE_WH"
-SNOWFLAKE_ROLE = "ITS_WORKSPACE"
-SNOWFLAKE_TABLE = "trip_sample_table_py"
+SNOWFLAKE_ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT", "IW82827.ap-southeast-7.aws")
+SNOWFLAKE_USER = os.getenv("SNOWFLAKE_USER", "logeshits")
+SNOWFLAKE_PASSWORD = os.getenv("SNOWFLAKE_PASSWORD", "Andoroktaits321")
+SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE", "ITS")
+SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA", "WORKSPACE")
+SNOWFLAKE_SCHEMA_TEMP=os.getenv("SNOWFLAKE_SCHEMA_TEMP", "STG")
+SNOWFLAKE_WAREHOUSE = os.getenv("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH")
+SNOWFLAKE_ROLE = os.getenv("SNOWFLAKE_ROLE", "ITS_WORKSPACE")
+SNOWFLAKE_TABLE = os.getenv("SNOWFLAKE_TABLE", "trip_sample_table_py")
 
 
 
