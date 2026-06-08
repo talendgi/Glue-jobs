@@ -59,3 +59,4 @@ CREATE TABLE BLOOD_COMPATIBILITY_LOOKUP (donor_blood_type STRING, recipient_bloo
 pipeline execution complete.
 26/06/08 08:03:34 WARN SparkConnectorContext$: Finish cancelling all queries for local-1780905785041
 2026-06-08 08:03:35,800 [INFO] Closing down clientserver connection
+
