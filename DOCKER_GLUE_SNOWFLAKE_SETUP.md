@@ -42,6 +42,7 @@ once the container is created
 <img width="1523" height="469" alt="image" src="https://github.com/user-attachments/assets/606d07ac-0314-4974-8df2-1785a8686fd7" />
 
 To attach to a** Docker container**, either select **Dev Containers: Attach to Running Container**... from the Command Palette (**F1**) or use the **Remote Explorer** in the **Activity Bar **and from the **Containers** view, select the Attach to Container inline action on the container you want to connect to.
+
 <img width="917" height="704" alt="image" src="https://github.com/user-attachments/assets/d195210b-6c55-4a1f-9799-300ce1019adc" />
 
 
