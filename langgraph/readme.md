@@ -37,3 +37,5 @@ graph TD
 **route_after_ddl_gen():** The conditional edge in LangGraph that skips DDL execution if the LLM determines the schemas are identical (NO_CHANGE).
 
 **INFORMATION_SCHEMA:**  Fetches metadata directly from MySQL and Snowflake system tables to pass clean schema definitions to the LLM.
+
+**merge_to_target:** to move data from staging to the main table
