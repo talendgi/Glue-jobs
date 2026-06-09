@@ -17,7 +17,8 @@ graph TD
     C -->|Schemas differ| D(Node 2: execute_ddl)
     C -->|NO_CHANGE| E(Node 3: load_to_stage)
     D --> E
-    E --> F[End: Pipeline Complete]
+    E --> F(Node 4: load_stage_to_target)
+    F--> G[End: Pipeline Complete]
 ```
 
 ## Code :
