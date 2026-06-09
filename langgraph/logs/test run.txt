@@ -1,14 +1,17 @@
 bash-5.2$ python langchain/el_mysql_to_snowflake.py
-
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+/usr/local/lib/python3.11/site-packages/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+  warnings.warn(
 ============================== MySQL Schema ==============================
 [{'COLUMN_NAME': 'donor_blood_type', 'DATA_TYPE': 'text', 'IS_NULLABLE': 'YES'}, {'COLUMN_NAME': 'recipient_blood_type', 'DATA_TYPE': 'text', 'IS_NULLABLE': 'YES'}, {'COLUMN_NAME': 'compatible_for_rbc_transfusion', 'DATA_TYPE': 'int', 'IS_NULLABLE': 'YES'}, {'COLUMN_NAME': 'compatibility_level', 'DATA_TYPE': 'text', 'IS_NULLABLE': 'YES'}]
-26/06/08 08:03:10 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
-26/06/08 08:03:10 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
-26/06/08 08:03:14 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+26/06/09 05:42:55 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/09 05:42:55 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+26/06/09 05:42:57 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
 ============================== Snowflake Schema ==============================
 []
-2026-06-08 08:03:17,826 [INFO] ============================================================
-2026-06-08 08:03:17,916 [INFO] Pipeline workflow (Mermaid):
+2026-06-09 05:42:59,397 [INFO] ============================================================
+2026-06-09 05:42:59,411 [INFO] Pipeline workflow (Mermaid):
 ---
 config:
   flowchart:
@@ -19,44 +22,55 @@ graph TD;
         generate_ddl(generate_ddl)
         execute_ddl(execute_ddl)
         load_to_stage(load_to_stage)
+        merge_to_target(merge_to_target)
         __end__([<p>__end__</p>]):::last
         __start__ --> generate_ddl;
         execute_ddl --> load_to_stage;
         generate_ddl -.-> execute_ddl;
         generate_ddl -.-> load_to_stage;
-        load_to_stage --> __end__;
+        load_to_stage --> merge_to_target;
+        merge_to_target --> __end__;
         classDef default fill:#f2f0ff,line-height:1.2
         classDef first fill-opacity:0
         classDef last fill:#bfb6fc
 
-2026-06-08 08:03:17,916 [INFO] ============================================================
-2026-06-08 08:03:17,921 [INFO] ▶ [node_generate_ddl] Calling LLM for schema comparison …
-2026-06-08 08:03:19,120 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-2026-06-08 08:03:19,160 [INFO] LLM raw output:
+2026-06-09 05:42:59,412 [INFO] ============================================================
+2026-06-09 05:42:59,414 [INFO] ▶ [node_generate_ddl] Calling LLM for schema comparison …
+2026-06-09 05:43:00,015 [INFO] HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-09 05:43:00,027 [INFO] LLM raw output:
 PARAGRAPH:
 The source schema for table `BLOOD_COMPATIBILITY_LOOKUP` in MySQL has four columns: `donor_blood_type` of type `text`, `recipient_blood_type` of type `text`, `compatible_for_rbc_transfusion` of type `int`, and `compatibility_level` of type `text`. All columns are nullable. The target schema in Snowflake is empty, indicating that the table does not exist yet. Based on the type mapping rules, the `int` type in MySQL will be mapped to `NUMBER` in Snowflake, and `text` will be mapped to `STRING`.
 
 SQL:
 CREATE TABLE BLOOD_COMPATIBILITY_LOOKUP (donor_blood_type STRING, recipient_blood_type STRING, compatible_for_rbc_transfusion NUMBER, compatibility_level STRING);
-2026-06-08 08:03:19,160 [INFO]    DDL action: CREATE
-2026-06-08 08:03:19,161 [INFO] ▶ [node_execute_ddl] Executing DDL:
+2026-06-09 05:43:00,028 [INFO]    DDL action: CREATE
+2026-06-09 05:43:00,028 [INFO] ▶ [node_execute_ddl] Executing DDL:
 CREATE TABLE BLOOD_COMPATIBILITY_LOOKUP (donor_blood_type STRING, recipient_blood_type STRING, compatible_for_rbc_transfusion NUMBER, compatibility_level STRING);
-26/06/08 08:03:20 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
-26/06/08 08:03:26 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
-2026-06-08 08:03:27,017 [INFO]    DDL executed successfully.
-2026-06-08 08:03:27,018 [INFO] ▶ [node_load_to_stage] Loading BLOOD_COMPATIBILITY_LOOKUP → BLOOD_COMPATIBILITY_LOOKUP_STG …
-2026-06-08 08:03:27,927 [INFO]    Rows read from MySQL: 64
-26/06/08 08:03:28 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
-26/06/08 08:03:28 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
-26/06/08 08:03:34 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
-2026-06-08 08:03:34,558 [INFO]    Load complete → STG.BLOOD_COMPATIBILITY_LOOKUP_STG (64 rows)
-2026-06-08 08:03:34,559 [INFO] ────────────────────────────────────────────────────────────
-2026-06-08 08:03:34,559 [INFO] DDL action  : CREATE
-2026-06-08 08:03:34,559 [INFO] Generated DDL:
-CREATE TABLE BLOOD_COMPATIBILITY_LOOKUP (donor_blood_type STRING, recipient_blood_type STRING, compatible_for_rbc_transfusion NUMBER, compatibility_level STRING);
-2026-06-08 08:03:34,559 [INFO] Load status : SUCCESS — 64 rows loaded into STG.BLOOD_COMPATIBILITY_LOOKUP_STG
-2026-06-08 08:03:34,559 [INFO] ============================================================
-pipeline execution complete.
-26/06/08 08:03:34 WARN SparkConnectorContext$: Finish cancelling all queries for local-1780905785041
-2026-06-08 08:03:35,800 [INFO] Closing down clientserver connection
+26/06/09 05:43:00 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/09 05:43:08 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+2026-06-09 05:43:08,793 [INFO]    DDL executed successfully.
+2026-06-09 05:43:08,795 [INFO] ▶ [node_load_to_stage] Loading BLOOD_COMPATIBILITY_LOOKUP → BLOOD_COMPATIBILITY_LOOKUP_STG …
+2026-06-09 05:43:09,329 [INFO]    Rows read from MySQL: 64
+26/06/09 05:43:09 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/09 05:43:09 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+26/06/09 05:43:12 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+2026-06-09 05:43:12,548 [INFO]    Load complete → STG.BLOOD_COMPATIBILITY_LOOKUP_STG (64 rows)
 
+🔀 Moving data from STG to target table and the load type is : FULL
+26/06/09 05:43:12 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/09 05:43:12 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+26/06/09 05:43:16 WARN SnowflakeConnectorUtils$: Query pushdown is not supported because you are using Spark 3.5.4-amzn-0 with a connector designed to support Spark 3.3. Either use the version of Spark supported by the connector or install a version of the connector that supports your version of Spark.
+26/06/09 05:43:16 WARN ServerConnection$: JDBC 3.16.0 is being used. But the certified JDBC version 3.13.29 is recommended.
+✅ Successfully loaded BLOOD_COMPATIBILITY_LOOKUP_STG to BLOOD_COMPATIBILITY_LOOKUP , SQL : 
+        TRUNCATE TABLE IF EXISTS WORKSPACE.BLOOD_COMPATIBILITY_LOOKUP;
+        INSERT INTO WORKSPACE.BLOOD_COMPATIBILITY_LOOKUP SELECT * FROM STG.BLOOD_COMPATIBILITY_LOOKUP_STG;
+        
+2026-06-09 05:43:17,002 [INFO] ────────────────────────────────────────────────────────────
+2026-06-09 05:43:17,002 [INFO] DDL action  : CREATE
+2026-06-09 05:43:17,002 [INFO] Generated DDL:
+CREATE TABLE BLOOD_COMPATIBILITY_LOOKUP (donor_blood_type STRING, recipient_blood_type STRING, compatible_for_rbc_transfusion NUMBER, compatibility_level STRING);
+2026-06-09 05:43:17,003 [INFO] Load status : SUCCESS — 64 rows loaded into STG.BLOOD_COMPATIBILITY_LOOKUP_STG
+2026-06-09 05:43:17,004 [INFO] ============================================================
+pipeline execution complete.
+26/06/09 05:43:17 WARN SparkConnectorContext$: Finish cancelling all queries for local-1780983771747
+2026-06-09 05:43:18,240 [INFO] Closing down clientserver connection
