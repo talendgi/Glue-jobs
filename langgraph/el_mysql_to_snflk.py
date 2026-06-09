@@ -60,6 +60,7 @@ class PipelineState(TypedDict):
     ddl_action:       str                 
     load_status:      str
     error:            Optional[str]
+    load_type:        str 
 
 
 # ─────────────────────────────────────────────
@@ -199,6 +200,66 @@ def node_load_to_stage(state: PipelineState) -> dict:
         logger.error("   Load failed: %s", exc)
         return {"load_status": "FAILED", "error": str(exc)}
 
+# Node 4 — Load Snowflake staging → Target table
+# ─────────────────────────────────────────────
+def node_merge_to_target(state: PipelineState) -> dict:
+    target_table = state["table_name"]
+    staging_table = f"{target_table}_STG"
+    LOAD_TYPE = state["load_type"]
+    incremental_column = state.get("incremental_column")
+
+    """
+    Moves data from Snowflake Staging schema to Target schema based on the chosen strategy.
+    """
+    target_fqn = f"{SF_OPTIONS['sfSchema']}.{target_table}"
+    stg_fqn = f"STG.{staging_table}"
+    
+    print(f"\n🔀 Moving data from STG to target table and the load type is : {LOAD_TYPE}")
+    
+    if LOAD_TYPE == "FULL":
+        sql = f"""
+        TRUNCATE TABLE IF EXISTS {target_fqn};
+        INSERT INTO {target_fqn} SELECT * FROM {stg_fqn};
+        """
+        
+    elif LOAD_TYPE == "APPEND":
+        sql = f"""
+        INSERT INTO {target_fqn} SELECT * FROM {stg_fqn};
+        """
+        
+    elif LOAD_TYPE == "DELETE_INSERT":
+        if not incremental_column:
+            raise ValueError("❌ DELETE_INSERT strategy requires an incremental_column (e.g., 'updated_at').")
+        
+        sql = f"""
+        DELETE FROM {target_fqn} 
+        WHERE {incremental_column} IN (SELECT DISTINCT {incremental_column} FROM {stg_fqn});
+        
+        INSERT INTO {target_fqn} SELECT * FROM {stg_fqn};
+        """
+        
+    elif LOAD_TYPE == "MERGE":
+        # Fallback to your existing MERGE logic if a Primary Key is somehow provided
+        print("⚠️ MERGE strategy selected, but this function expects no PK. Use your existing MERGE function.")
+        return
+        
+    else:
+        raise ValueError(f"❌ Unknown LOAD_STRATEGY: {LOAD_TYPE}")
+
+    # Execute the generated SQL
+    try:   
+        """Execute SQL query in Snowflake"""
+        spark.createDataFrame([(1, "test")], ["id", "name"]).write \
+        .format("snowflake") \
+        .options(**SF_OPTIONS) \
+        .option("dbtable", "Dummy")\
+        .option("postactions", sql) \
+        .mode("append") \
+        .save()
+        print(f"✅ Successfully loaded {staging_table} to {target_table} , SQL : {sql}")
+    except Exception as e:
+        print(f"❌ Failed to load staging to target: {str(e)}")
+        raise e
 
 #  Conditional edge — skip DDL execution when NO_CHANGE
 # ─────────────────────────────────────────────
@@ -216,7 +277,7 @@ def build_graph() -> StateGraph:
     builder.add_node("generate_ddl",   node_generate_ddl)
     builder.add_node("execute_ddl",    node_execute_ddl)
     builder.add_node("load_to_stage",  node_load_to_stage)
-
+    builder.add_node("merge_to_target",   node_merge_to_target)
     builder.set_entry_point("generate_ddl")
 
     builder.add_conditional_edges(
@@ -228,6 +289,7 @@ def build_graph() -> StateGraph:
         },
     )
     builder.add_edge("execute_ddl",   "load_to_stage")
+    builder.add_edge("load_to_stage",   "merge_to_target")
     # builder.add_edge("load_to_stage", END)
 
     return builder.compile()
@@ -235,7 +297,7 @@ def build_graph() -> StateGraph:
 
 #  Entry point
 # ─────────────────────────────────────────────
-def run_pipeline(table_name: str, mysql_schema: list, snowflake_schema: list) -> dict:
+def run_pipeline(table_name: str, mysql_schema: list, snowflake_schema: list,load_type: str = "FULL", primary_key: str = "", incremental_col: str = "") -> dict:
     graph = build_graph()
 
     logger.info("=" * 60)
@@ -250,6 +312,7 @@ def run_pipeline(table_name: str, mysql_schema: list, snowflake_schema: list) ->
         "ddl_action":       "",
         "load_status":      "",
         "error":            None,
+        "load_type":        load_type,
     }
 
     result = graph.invoke(initial_state)
@@ -267,6 +330,7 @@ def run_pipeline(table_name: str, mysql_schema: list, snowflake_schema: list) ->
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
     table_name = "BLOOD_COMPATIBILITY_LOOKUP"
+    LOAD_TYPE = "FULL"
 
     # ── MySQL: read schema via INFORMATION_SCHEMA ──────────────────
     try:
